@@ -1,4 +1,4 @@
-﻿using Photon.Pun;
+using Photon.Pun;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -60,6 +60,9 @@ public class ContinuousController : MonoBehaviour
         }
     }
     public DeckData LastBattleDeckData { get; private set; } = null;
+
+    public bool IsReplayMode { get; set; } = false;
+    public ReplayData SelectedReplayData { get; set; } = null;
 
     public bool NeedUpdate { get; set; }
 
@@ -1151,6 +1154,53 @@ public class ContinuousController : MonoBehaviour
     public Coroutine LoadingTextCoroutine;
 
     bool _endBattle = false;
+
+    public void StartReplayBattle(ReplayData replay)
+    {
+        if (replay == null) return;
+        IsReplayMode = true;
+        SelectedReplayData = replay;
+        StartCoroutine(StartReplayBattleCoroutine());
+    }
+
+    private IEnumerator StartReplayBattleCoroutine()
+    {
+        if (Opening.instance != null)
+        {
+            if (Opening.instance.OpeningBGM != null)
+                ContinuousController.instance.StartCoroutine(Opening.instance.OpeningBGM.FadeOut(0.1f));
+
+            foreach (Camera camera in Opening.instance.openingCameras)
+            {
+                camera.gameObject.SetActive(false);
+            }
+
+            Opening.instance.OffYesNoObjects();
+            if (Opening.instance.deck != null)
+            {
+                if (Opening.instance.deck.trialDraw != null) Opening.instance.deck.trialDraw.Close();
+                if (Opening.instance.deck.deckListPanel != null) Opening.instance.deck.deckListPanel.Close();
+            }
+        }
+
+        yield return new WaitForSeconds(0.1f);
+
+        SceneManager.LoadScene("BattleScene");
+    }
+
+    public void EndReplayBattle()
+    {
+        StartCoroutine(EndReplayBattleCoroutine());
+    }
+
+    private IEnumerator EndReplayBattleCoroutine()
+    {
+        IsReplayMode = false;
+        SelectedReplayData = null;
+
+        yield return Resources.UnloadUnusedAssets();
+        SceneManager.LoadScene("ReplayScene");
+    }
 
     public void EndBattle()
     {

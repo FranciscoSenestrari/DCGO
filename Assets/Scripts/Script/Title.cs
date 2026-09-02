@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -17,6 +17,9 @@ public class Title : MonoBehaviour
     {
         this.gameObject.SetActive(true);
         anim.enabled = true;
+
+        if (TitleLogo != null)
+            DCGO.UI.DCGOThemeManager.ApplyGlitchLogo(TitleLogo);
     }
 
     bool _clicked = false;
@@ -73,7 +76,10 @@ public class Title : MonoBehaviour
         
         OffTitle();
 
-        //yield return ContinuousController.instance.StartCoroutine(checkUpdate.CheckUpdateCoroutine());
+        if (Opening.instance != null && Opening.instance.LoadingObject != null)
+        {
+            yield return ContinuousController.instance.StartCoroutine(CardZipDownloader.Instance.CheckAndDownloadCardZip(Opening.instance.LoadingObject));
+        }
 
         Opening.instance.home.SetUpHome();
     }

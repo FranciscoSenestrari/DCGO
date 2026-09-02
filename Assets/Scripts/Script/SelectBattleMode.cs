@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -92,6 +92,12 @@ public class SelectBattleMode : MonoBehaviour
                     //AI戦
                     StartSelectBattleDeck(true);
                 },
+
+                () =>
+                {
+                    //Replays
+                    Opening.instance.OpenReplaysScene();
+                },
             };
 
         List<string> CommandTexts = new List<string>()
@@ -107,6 +113,10 @@ public class SelectBattleMode : MonoBehaviour
                 LocalizeUtility.GetLocalizedString(
                     EngMessage:"Bot Match",
                     JpnMessage:"Bot戦"
+                ),
+                LocalizeUtility.GetLocalizedString(
+                    EngMessage:"Match Replays",
+                    JpnMessage:"リプレイ"
                 ),
             };
 

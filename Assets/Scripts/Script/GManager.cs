@@ -1,4 +1,4 @@
-﻿using Photon.Pun;
+using Photon.Pun;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -248,6 +248,12 @@ public class GManager : MonoBehaviourPun
 
     IEnumerator AwakeCoroutine()
     {
+        if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "ReplayScene" || (ContinuousController.instance != null && ContinuousController.instance.IsReplayMode))
+        {
+            yield return StartCoroutine(AwakeReplayCoroutine());
+            yield break;
+        }
+
 #if UNITY_EDITOR
 
 #endif
@@ -297,6 +303,81 @@ public class GManager : MonoBehaviourPun
         ContinuousController.instance.CanSetRandom = true;
     }
 
+    private IEnumerator AwakeReplayCoroutine()
+    {
+        IsAI = false;
+        isAuto = false;
+
+        // 1. Immediately dismiss any loading overlays
+        if (LoadingObject != null)
+        {
+            LoadingObject.gameObject.SetActive(false);
+        }
+        if (Opening.instance != null)
+        {
+            if (Opening.instance.LoadingObject != null) Opening.instance.LoadingObject.gameObject.SetActive(false);
+            if (Opening.instance.LoadingObject_Unload != null) Opening.instance.LoadingObject_Unload.gameObject.SetActive(false);
+            if (Opening.instance.LoadingObject_light != null) Opening.instance.LoadingObject_light.gameObject.SetActive(false);
+            if (Opening.instance.openingObject != null) Opening.instance.openingObject.SetActive(false);
+        }
+
+        // 2. Setup turn state machine and game context for data access
+        turnStateMachine = gameObject.AddComponent<TurnStateMachine>();
+        turnStateMachine.gameContext = new GameContext(You, Opponent);
+
+        // 3. Initialize visual components
+        if (GetComponent<Effects>() != null) GetComponent<Effects>().Init();
+        if (playLog != null) playLog.Init();
+        if (hideCannotSelectObject != null) hideCannotSelectObject.Init();
+        ChangeBackground();
+
+        // 4. Initialize players & security objects
+        if (You != null)
+        {
+            You.gameObject.SetActive(true);
+            if (You.securityObject != null) You.securityObject.gameObject.SetActive(true);
+        }
+        if (Opponent != null)
+        {
+            Opponent.gameObject.SetActive(true);
+            if (Opponent.securityObject != null) Opponent.securityObject.gameObject.SetActive(true);
+        }
+
+        // 5. Hide battle interactive panels not needed for replays
+        if (selectCommandPanel != null) selectCommandPanel.Off();
+        if (BackButton != null) BackButton.CloseSelectCommandButton();
+        if (commandText != null) commandText.Init();
+        if (resultObject != null) resultObject.Init();
+        if (sideBar != null) sideBar.Init();
+        if (showTurnPlayerObject != null) showTurnPlayerObject.Init();
+        if (showPhaseNotificationObject != null) showPhaseNotificationObject.Init();
+        OffTargetArrow();
+        if (cardDetail != null) cardDetail.CloseCardDetail();
+        if (pokemonDetail != null) pokemonDetail.CloseUnitDetail();
+        if (selectCardPanel != null) selectCardPanel.CloseSelectCardPanel();
+        if (optionPanel != null) optionPanel.Init();
+        if (nextPhaseButton != null) nextPhaseButton.gameObject.SetActive(false);
+
+        // 6. Memory Object
+        if (memoryObject != null)
+        {
+            memoryObject.Init();
+        }
+
+        // 7. Add and initialize ReplayBattleController
+        var replayCtrl = gameObject.AddComponent<ReplayBattleController>();
+        ReplayData replayToLoad = ContinuousController.instance != null ? ContinuousController.instance.SelectedReplayData : null;
+        replayCtrl.Init(replayToLoad);
+
+        // 8. BGM
+        if (bgms.Count >= 1 && BattleBGM != null)
+        {
+            BattleBGM.StartPlayBGM(bgms[UnityEngine.Random.Range(0, bgms.Count)]);
+        }
+
+        yield break;
+    }
+
     protected virtual void OnDestroy()
     {
         if (instance == this)
@@ -321,18 +402,25 @@ public class GManager : MonoBehaviourPun
 
         if (backgroundSprite != null)
         {
-            BackgroundImage.sprite = backgroundSprite;
-            BackgroundSpriteRenderer.sprite = backgroundSprite;
-            BackgroundImage.gameObject.SetActive(true);
+            if (BackgroundImage != null)
+            {
+                BackgroundImage.sprite = backgroundSprite;
+                DCGO.UI.DCGOThemeManager.ApplyBackgroundShader(BackgroundImage);
+                BackgroundImage.gameObject.SetActive(true);
+            }
 
-            BackgroundSpriteRenderer.transform.localPosition = new Vector3(-134, BackgroundSpriteRenderer.transform.localPosition.y, -77f);
-            BackgroundSpriteRenderer.gameObject.SetActive(true);
+            if (BackgroundSpriteRenderer != null)
+            {
+                BackgroundSpriteRenderer.sprite = backgroundSprite;
+                BackgroundSpriteRenderer.transform.localPosition = new Vector3(-134, BackgroundSpriteRenderer.transform.localPosition.y, -77f);
+                BackgroundSpriteRenderer.gameObject.SetActive(true);
+            }
         }
 
         else
         {
-            BackgroundImage.gameObject.SetActive(false);
-            BackgroundSpriteRenderer.gameObject.SetActive(false);
+            if (BackgroundImage != null) BackgroundImage.gameObject.SetActive(false);
+            if (BackgroundSpriteRenderer != null) BackgroundSpriteRenderer.gameObject.SetActive(false);
         }
     }
 

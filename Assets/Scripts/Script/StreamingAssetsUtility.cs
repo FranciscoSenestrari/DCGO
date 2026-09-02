@@ -1,4 +1,3 @@
-
 using System;
 using System.IO;
 using System.Threading.Tasks;
@@ -19,7 +18,7 @@ public class StreamingAssetsUtility
         }
     }
 
-    #region 画像の取得
+    #region Texture Conversion
     public static Texture2D BinaryToTexture(byte[] bytes)
     {
         Texture2D texture = new Texture2D(1, 1);
@@ -158,7 +157,14 @@ public class StreamingAssetsUtility
         {
             Debug.Log($"WebRequest Successful: Checking local file - {File.Exists(filePath)}");
             if (!File.Exists(filePath))
+            {
+                string directory = Path.GetDirectoryName(filePath);
+                if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+                {
+                    Directory.CreateDirectory(directory);
+                }
                 File.WriteAllBytes(filePath, webReq_CardImage.downloadHandler.data);
+            }
 
             Texture2D texture = Texture2DExt.CreateTexture2DFromWebP(webReq_CardImage.downloadHandler.data, lMipmaps: true, lLinear: false, lError: out WebP.Error lError);
 
@@ -184,7 +190,7 @@ public class StreamingAssetsUtility
         return File.Exists(path);
     }
 
-    #region テキストファイルの取得
+    #region Text Files
     public static string GetText(string fileName)
     {
         string path = Path.Combine(GetStreamingAssetPath("", false), $"{fileName}.txt").Replace("\\", "/");
@@ -200,6 +206,24 @@ public class StreamingAssetsUtility
 
     public static string GetStreamingAssetPath(string subPath, bool isLauncher)
     {
+#if UNITY_ANDROID || UNITY_IOS || UNITY_VISIONOS
+        string path = Path.Combine(Application.persistentDataPath, subPath).Replace("\\", "/");
+        if (!Directory.Exists(path))
+        {
+            Directory.CreateDirectory(path);
+        }
+        return path;
+#else
+        if (Application.isMobilePlatform)
+        {
+            string path = Path.Combine(Application.persistentDataPath, subPath).Replace("\\", "/");
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
+            return path;
+        }
+
         if (isLauncher)
         {
             string path = Application.streamingAssetsPath;
@@ -208,9 +232,13 @@ public class StreamingAssetsUtility
 
             path = Path.Combine(path, $"Assets/{subPath}").Replace("\\", "/");
 
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
+
             return path;
         }
-
         else
         {
             string path = Application.streamingAssetsPath;
@@ -221,8 +249,14 @@ public class StreamingAssetsUtility
 
             path = Path.Combine(path, $"Assets/{subPath}").Replace("\\", "/");
 
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
+
             return path;
         }
+#endif
     }
 
     static string GetOneUpperDirectoryPath(string path)

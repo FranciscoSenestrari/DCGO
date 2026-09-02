@@ -1,4 +1,4 @@
-﻿using Photon.Pun;
+using Photon.Pun;
 using Photon.Pun.Demo.PunBasics;
 using Photon.Realtime;
 using System;
@@ -289,6 +289,14 @@ public class TurnStateMachine : MonoBehaviourPunCallbacks
 
         #endregion
 
+
+        #region Replay Recording Initialization
+        if (ReplayRecorder.Instance == null)
+        {
+            new GameObject("ReplayRecorder").AddComponent<ReplayRecorder>();
+        }
+        ReplayRecorder.Instance.StartRecording(gameContext);
+        #endregion
 
         yield return StartCoroutine(GManager.instance.LoadingObject.EndLoading());
 
@@ -3343,6 +3351,11 @@ public class TurnStateMachine : MonoBehaviourPunCallbacks
         GManager.instance.optionPanel.Close_(false);
 
         GManager.instance.LoadingObject.gameObject.SetActive(false);
+
+        if (ReplayRecorder.Instance != null)
+        {
+            ReplayRecorder.Instance.EndMatch(Winner != null ? Winner.PlayerName : "Draw");
+        }
 
         GManager.instance.resultObject.ShowResult(Winner, Surrendered, effectName);
 

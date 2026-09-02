@@ -1,4 +1,4 @@
-﻿using Photon.Pun;
+using Photon.Pun;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -465,7 +465,10 @@ public class Opening : MonoBehaviour
 
         optionPanel.Init();
 
-        patchNotesPanel.Init();
+        if (patchNotesPanel != null)
+        {
+            patchNotesPanel.Init();
+        }
 
         yield return StartCoroutine(deck.editDeck.InitEditDeck());
 
@@ -514,5 +517,11 @@ public class Opening : MonoBehaviour
                 await keyCard.LoadCardImage();
             }
         }
+    }
+
+    public void OpenReplaysScene()
+    {
+        PlayDecisionSE();
+        UnityEngine.SceneManagement.SceneManager.LoadScene("ReplayScene");
     }
 }
